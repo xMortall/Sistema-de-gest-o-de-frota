@@ -5,6 +5,6 @@
 # Importa a biblioteca datetime para manipulação de datas e horas.
 # @author: Emanuel Borges
 
-import datetime as dt
-import pygame as pg
-import PySimpleGUI as sg
+import datetime     # usado para manipulação de datas e horas
+import pygame       # usado para criar interfaces gráficas
+    
