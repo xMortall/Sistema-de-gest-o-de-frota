@@ -34,10 +34,5 @@ class CarroEletrico(Veiculo):
 
     # sobrescreve o método __str__ para incluir a autonomia na representação
     def __str__(self):
-        desconto = " [DESCONTO]" if self.com_desconto else ""
-        data = self.data_adicao.strftime("%d/%m/%Y %H:%M")
-        eletrico = " [ELÉTRICO]"  # marca elétrica
-        return (
-            f"{self.marca} | {self.modelo} | {self.preco:.2f}€ | "
-            f"{self.autonomia} km | {data}{desconto}{eletrico}"
-        )
+        base = super().__str__()
+        return f"{base} | {self.autonomia} km [ELÉTRICO]"

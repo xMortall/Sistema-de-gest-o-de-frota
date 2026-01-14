@@ -5,10 +5,11 @@
 # Importa a biblioteca datetime para manipulação de datas e horas.
 # @author: Emanuel Borges
 
-from gui import executar_gui
+from gui import GestaoGUI
 
 def main():
-    executar_gui()
+    gui = GestaoGUI()
+    gui.run()
 
 if __name__ == "__main__":
     main()

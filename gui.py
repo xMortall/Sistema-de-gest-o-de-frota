@@ -11,162 +11,174 @@ from veiculo import Veiculo, CarroEletrico
 
 pygame.init()
 
-# ---------------- JANELA ----------------
-LARGURA, ALTURA = 950, 550
-tela = pygame.display.set_mode((LARGURA, ALTURA))
-pygame.display.set_caption("Gestão de Frota")
-fonte = pygame.font.SysFont(None, 24)
 
-# ---------------- DADOS ----------------
-frota = Frota()
-frota.carregar_inventario()     # LÊ O FICHEIRO AO INICIAR
-lista_exibir = frota.veiculos
+# ---------------- DECORATOR ----------------
+def validar_campos(*campos_requeridos):
+    """
+    Decorator que verifica se os campos obrigatórios não estão vazios.
+    Se algum estiver vazio, seta erro e interrompe a função.
+    """
+    def decorator(func):
+        def wrapper(self, *args, **kwargs):
+            for k in campos_requeridos:
+                if self.texto[k] == "":
+                    self.erro[k] = "Obrigatório"
+                    return
+            return func(self, *args, **kwargs)
+        return wrapper
+    return decorator
 
-# ---------------- CAMPOS ----------------
-campos = {
-    "marca": pygame.Rect(40, 40, 150, 30),
-    "modelo": pygame.Rect(200, 40, 150, 30),
-    "preco": pygame.Rect(360, 40, 100, 30),
-    "autonomia": pygame.Rect(470, 40, 100, 30),
-}
 
-texto = {k: "" for k in campos}
-erro = {k: "" for k in campos}
+# ---------------- CLASSE PRINCIPAL ----------------
+class GestaoGUI:
+    def __init__(self):
+        # Janela
+        self.LARGURA, self.ALTURA = 950, 550
+        self.tela = pygame.display.set_mode((self.LARGURA, self.ALTURA))
+        pygame.display.set_caption("Gestão de Frota")
+        self.fonte = pygame.font.SysFont(None, 24)
 
-campo_ativo = None
-eletrico = False
-desconto = False
+        # Dados
+        self.frota = Frota()
+        self.frota.carregar_inventario()
+        self.lista_exibir = self.frota.veiculos
 
-# ---------------- BOTÕES ----------------
-btao_add = pygame.Rect(600, 40, 140, 30)
-btao_exportar = pygame.Rect(750, 40, 140, 30)
+        # Campos
+        self.campos = {
+            "marca": pygame.Rect(40, 40, 150, 30),
+            "modelo": pygame.Rect(200, 40, 150, 30),
+            "preco": pygame.Rect(360, 40, 100, 30),
+            "autonomia": pygame.Rect(470, 40, 100, 30),
+        }
+        self.texto = {k: "" for k in self.campos}
+        self.erro = {k: "" for k in self.campos}
+        self.campo_ativo = None
+        self.eletrico = False
+        self.desconto = False
 
-# ---------------- FUNÇÕES ----------------
-def escrever(txt, x, y, cor=(255,255,255)):
-    tela.blit(fonte.render(txt, True, cor), (x, y))
+        # Botões
+        self.btao_add = pygame.Rect(600, 40, 140, 30)
+        self.btao_exportar = pygame.Rect(750, 40, 140, 30)
 
-def desenhar_checkbox(rect, ativo, label):
-    pygame.draw.rect(tela, (255,255,255), rect, 2)
-    if ativo:
-        pygame.draw.line(tela, (0,255,0), (rect.x+3, rect.y+10), (rect.x+10, rect.y+17), 3)
-        pygame.draw.line(tela, (0,255,0), (rect.x+10, rect.y+17), (rect.x+22, rect.y+3), 3)
-    escrever(label, rect.x + 30, rect.y + 2)
+        # Lambdas para desenho
+        self.desenhar_campo = lambda nome, rect: (
+            pygame.draw.rect(self.tela, (200, 200, 200), rect, 2),
+            self.escrever(nome.capitalize(), rect.x, rect.y - 18),
+            self.escrever(self.texto[nome], rect.x + 5, rect.y + 5),
+            self.escrever(self.erro[nome], rect.x, rect.y + 35, (255, 0, 0)) if self.erro[nome] else None
+        )
+        self.toggle_checkbox = lambda rect, estado, e: not estado if e.type == pygame.MOUSEBUTTONDOWN and rect.collidepoint(pygame.mouse.get_pos()) else estado
 
-def adicionar_veiculo():
-    global texto, erro
+    # ---------------- FUNÇÕES ----------------
+    def escrever(self, txt, x, y, cor=(255, 255, 255)):
+        self.tela.blit(self.fonte.render(txt, True, cor), (x, y))
 
-    for k in erro:
-        erro[k] = ""
+    def desenhar_checkbox(self, rect, ativo, label):
+        pygame.draw.rect(self.tela, (255, 255, 255), rect, 2)
+        if ativo:
+            pygame.draw.line(self.tela, (0, 255, 0), (rect.x + 3, rect.y + 10), (rect.x + 10, rect.y + 17), 3)
+            pygame.draw.line(self.tela, (0, 255, 0), (rect.x + 10, rect.y + 17), (rect.x + 22, rect.y + 3), 3)
+        self.escrever(label, rect.x + 30, rect.y + 2)
 
-    if texto["marca"] == "":
-        erro["marca"] = "Obrigatório"
-        return
+    @validar_campos("marca", "modelo", "preco")
+    def adicionar_veiculo(self):
+        # Reset erros
+        for k in self.erro:
+            self.erro[k] = ""
 
-    if texto["modelo"] == "":
-        erro["modelo"] = "Obrigatório"
-        return
-
-    try:
-        preco = float(texto["preco"])
-    except:
-        erro["preco"] = "Número inválido"
-        return
-
-    if eletrico:
         try:
-            autonomia = int(texto["autonomia"])
+            preco = float(self.texto["preco"])
         except:
-            erro["autonomia"] = "Obrigatório (número)"
+            self.erro["preco"] = "Número inválido"
             return
 
-        # CÁLCULO DA AUTONOMIA
-        if desconto:
-            autonomia = int(autonomia * 1.1)
+        if self.eletrico:
+            try:
+                autonomia = int(self.texto["autonomia"])
+            except:
+                self.erro["autonomia"] = "Obrigatório (número)"
+                return
+            if self.desconto:
+                autonomia = int(autonomia * 1.1)
+            v = CarroEletrico(self.texto["marca"], preco, self.texto["modelo"], autonomia)
+        else:
+            v = Veiculo(self.texto["marca"], preco, self.texto["modelo"])
 
-        v = CarroEletrico(texto["marca"], preco, texto["modelo"], autonomia)
-    else:
-        v = Veiculo(texto["marca"], preco, texto["modelo"])
+        if self.desconto:
+            v.preco *= 0.9
+            v.com_desconto = True
 
-    if desconto:
-        v.preco *= 0.9
-        v.com_desconto = True
+        self.frota.adicionar_veiculo(v)
+        for k in self.texto:
+            self.texto[k] = ""
 
-    frota.adicionar_veiculo(v)
+    def desenhar_lista(self):
+        y = 150
+        for v in self.lista_exibir[-10:]:
+            self.escrever(str(v), 40, y)
+            botao_x = pygame.Rect(880, y, 25, 25)
+            pygame.draw.rect(self.tela, (200, 60, 60), botao_x)
+            self.escrever("X", 888, y)
+            yield botao_x, v
+            y += 30
 
-    for k in texto:
-        texto[k] = ""
+    # ---------------- LOOP PRINCIPAL ----------------
+    def run(self):
+        running = True
+        while running:
+            self.tela.fill((30, 30, 30))
 
-def desenhar_lista():
-    y = 150
-    for v in lista_exibir[-10:]:
-        escrever(str(v), 40, y)
-        botao_x = pygame.Rect(880, y, 25, 25)
-        pygame.draw.rect(tela, (200,60,60), botao_x)
-        escrever("X", 888, y)
-        yield botao_x, v
-        y += 30
+            # Desenhar campos
+            for nome, rect in self.campos.items():
+                self.desenhar_campo(nome, rect)
 
-# ---------------- LOOP ----------------
-running = True
-while running:
-    tela.fill((30,30,30))
+            # Checkboxes
+            chk_eletrico = pygame.Rect(40, 90, 20, 20)
+            chk_desconto = pygame.Rect(200, 90, 20, 20)
+            self.desenhar_checkbox(chk_eletrico, self.eletrico, "Elétrico")
+            self.desenhar_checkbox(chk_desconto, self.desconto, "Desconto 10%")
 
-    # Campos
-    for nome, rect in campos.items():
-        pygame.draw.rect(tela, (200,200,200), rect, 2)
-        escrever(nome.capitalize(), rect.x, rect.y - 18)
-        escrever(texto[nome], rect.x + 5, rect.y + 5)
-        if erro[nome]:
-            escrever(erro[nome], rect.x, rect.y + 35, (255,0,0))
+            # Botões
+            pygame.draw.rect(self.tela, (100, 160, 220), self.btao_add)
+            self.escrever("Adicionar", self.btao_add.x + 20, self.btao_add.y + 8)
+            pygame.draw.rect(self.tela, (100, 160, 220), self.btao_exportar)
+            self.escrever("Exportar", self.btao_exportar.x + 25, self.btao_exportar.y + 8)
 
-    # Checkboxes
-    chk_eletrico = pygame.Rect(40, 90, 20, 20)
-    chk_desconto = pygame.Rect(200, 90, 20, 20)
-    desenhar_checkbox(chk_eletrico, eletrico, "Elétrico")
-    desenhar_checkbox(chk_desconto, desconto, "Desconto 10%")
+            # Lista de veículos
+            botoes_x = list(self.desenhar_lista())
 
-    # Botões
-    pygame.draw.rect(tela, (100,160,220), btao_add)
-    escrever("Adicionar", btao_add.x + 20, btao_add.y + 8)
+            pygame.display.flip()
 
-    pygame.draw.rect(tela, (100,160,220), btao_exportar)
-    escrever("Exportar", btao_exportar.x + 25, btao_exportar.y + 8)
+            for e in pygame.event.get():
+                if e.type == pygame.QUIT:
+                    running = False
 
-    # Lista
-    botoes_x = list(desenhar_lista())
+                # Clique do mouse
+                if e.type == pygame.MOUSEBUTTONDOWN:
+                    self.campo_ativo = None
+                    for k, r in self.campos.items():
+                        if r.collidepoint(e.pos):
+                            self.campo_ativo = k
 
-    pygame.display.flip()
+                    self.eletrico = self.toggle_checkbox(chk_eletrico, self.eletrico, e)
+                    self.desconto = self.toggle_checkbox(chk_desconto, self.desconto, e)
 
-    for e in pygame.event.get():
-        if e.type == pygame.QUIT:
-            running = False
+                    if self.btao_add.collidepoint(e.pos):
+                        self.adicionar_veiculo()
 
-        if e.type == pygame.MOUSEBUTTONDOWN:
-            campo_ativo = None
-            for k, r in campos.items():
-                if r.collidepoint(e.pos):
-                    campo_ativo = k
+                    if self.btao_exportar.collidepoint(e.pos):
+                        self.frota.exportar_inventario()
+                        print("Inventário exportado com sucesso!")
 
-            if chk_eletrico.collidepoint(e.pos):
-                eletrico = not eletrico
+                    for bx, v in botoes_x:
+                        if bx.collidepoint(e.pos):
+                            self.frota.remover_veiculo(v)
 
-            if chk_desconto.collidepoint(e.pos):
-                desconto = not desconto
+                # Digitação
+                if e.type == pygame.KEYDOWN and self.campo_ativo:
+                    if e.key == pygame.K_BACKSPACE:
+                        self.texto[self.campo_ativo] = self.texto[self.campo_ativo][:-1]
+                    else:
+                        self.texto[self.campo_ativo] += e.unicode
 
-            if btao_add.collidepoint(e.pos):
-                adicionar_veiculo()
-
-            if btao_exportar.collidepoint(e.pos):
-                frota.exportar_inventario()
-
-            for bx, v in botoes_x:
-                if bx.collidepoint(e.pos):
-                    frota.remover_veiculo(v)
-
-        if e.type == pygame.KEYDOWN and campo_ativo:
-            if e.key == pygame.K_BACKSPACE:
-                texto[campo_ativo] = texto[campo_ativo][:-1]
-            else:
-                texto[campo_ativo] += e.unicode
-
-pygame.quit()
+        pygame.quit()

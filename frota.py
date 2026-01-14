@@ -30,17 +30,20 @@ class Frota:
     def listar_veiculos(self, marca):
         return [v for v in self.veiculos if v.marca.lower() == marca.lower()]         # Retorna a lista de veículos na frota
     
+    # aplica desconto a todos os veículos
     def aplicar_descontos(self, percentagem):
         desconto = lambda preco: preco * (1 - percentagem / 100)  # Função lambda para calcular o preço com desconto
         for v in self.veiculos:
             v.preco = desconto(v.preco)                           # Aplica o desconto ao preço de cada veículo na frota
             v.com_desconto = True                                 # Marca o veículo como tendo desconto aplicado
+
+    # função para exportar inventário para um arquivo
     def exportar_inventario(self):
         with open('inventario_frota.txt', 'w') as f:
             for v in self.veiculos:
                 f.write(str(v) + '\n')                            # Exporta o inventário da frota para um arquivo de texto
 
-
+    # função para carregar inventário de um arquivo
     def carregar_inventario(self):
         try:
             with open('inventario_frota.txt', 'r') as f:
@@ -57,7 +60,7 @@ class Frota:
                     # Verificar se é elétrico e pegar autonomia
                     if '[ELÉTRICO]' in linha:
                         # autonomia está na terceira parte: 400 km
-                        autonomia = int(partes[3].strip().split()[0])
+                        autonomia = int(partes[4].strip().split()[0])
                         veiculo = CarroEletrico(marca, preco, modelo, autonomia)
                     else:
                         veiculo = Veiculo(marca, preco, modelo)
