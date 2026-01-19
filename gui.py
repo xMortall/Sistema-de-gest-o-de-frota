@@ -1,8 +1,8 @@
 # @title Interface Gráfica para Gestão de Frota
-# @version: 1.0
-# @date: 2026-01-8
+# @version: 1.1
+# @date: 2026-01-14
 # @description:
-# Faz a gestão de uma frota de veículos através de uma interface gráfica usando Pygame.
+# Faz a gestão de uma frota de veículos através de uma interface gráfica usando Pygame, agora com filtro por marca.
 # @author: Emanuel Borges
 
 from bibliotecas import pygame
@@ -59,6 +59,11 @@ class GestaoGUI:
         # Botões
         self.btao_add = pygame.Rect(600, 40, 140, 30)
         self.btao_exportar = pygame.Rect(750, 40, 140, 30)
+        self.btao_filtrar = pygame.Rect(600, 90, 300, 30)
+
+        # Filtro de marca
+        self.filtro_ativo = False
+        self.filtro_marca = ""
 
         # Lambdas para desenho
         self.desenhar_campo = lambda nome, rect: (
@@ -112,8 +117,18 @@ class GestaoGUI:
         for k in self.texto:
             self.texto[k] = ""
 
+        self.filtrar_por_marca()  # Atualiza a lista caso algum filtro esteja ativo
+
+    # filtra a lista de veículos pela marca
+    def filtrar_por_marca(self):
+        if self.filtro_marca.strip() == "":
+            self.lista_exibir = self.frota.veiculos
+        else:
+            self.lista_exibir = [v for v in self.frota.veiculos if v.marca.lower() == self.filtro_marca.lower()]
+
+    # desenha a lista de veículos na tela
     def desenhar_lista(self):
-        y = 150
+        y = 200
         for v in self.lista_exibir[-10:]:
             self.escrever(str(v), 40, y)
             botao_x = pygame.Rect(880, y, 25, 25)
@@ -143,6 +158,15 @@ class GestaoGUI:
             self.escrever("Adicionar", self.btao_add.x + 20, self.btao_add.y + 8)
             pygame.draw.rect(self.tela, (100, 160, 220), self.btao_exportar)
             self.escrever("Exportar", self.btao_exportar.x + 25, self.btao_exportar.y + 8)
+            pygame.draw.rect(self.tela, (100, 160, 220), self.btao_filtrar)
+            self.escrever("Filtrar por Marca", self.btao_filtrar.x + 10, self.btao_filtrar.y + 8)
+
+            # Campo de filtro ativo
+            if self.filtro_ativo:
+                filtro_rect = pygame.Rect(600, 130, 200, 30)
+                pygame.draw.rect(self.tela, (200, 200, 200), filtro_rect, 2)
+                self.escrever(self.filtro_marca, filtro_rect.x + 5, filtro_rect.y + 5)
+                self.escrever("Digite a marca e pressione Enter", filtro_rect.x, filtro_rect.y - 20, (180, 180, 180))
 
             # Lista de veículos
             botoes_x = list(self.desenhar_lista())
@@ -170,15 +194,29 @@ class GestaoGUI:
                         self.frota.exportar_inventario()
                         print("Inventário exportado com sucesso!")
 
+                    if self.btao_filtrar.collidepoint(e.pos):
+                        self.filtro_ativo = True
+                        self.filtro_marca = ""
+
                     for bx, v in botoes_x:
                         if bx.collidepoint(e.pos):
                             self.frota.remover_veiculo(v)
+                            self.filtrar_por_marca()
 
                 # Digitação
-                if e.type == pygame.KEYDOWN and self.campo_ativo:
-                    if e.key == pygame.K_BACKSPACE:
-                        self.texto[self.campo_ativo] = self.texto[self.campo_ativo][:-1]
-                    else:
-                        self.texto[self.campo_ativo] += e.unicode
+                if e.type == pygame.KEYDOWN:
+                    if self.filtro_ativo:
+                        if e.key == pygame.K_RETURN:
+                            self.filtro_ativo = False
+                            self.filtrar_por_marca()
+                        elif e.key == pygame.K_BACKSPACE:
+                            self.filtro_marca = self.filtro_marca[:-1]
+                        else:
+                            self.filtro_marca += e.unicode
+                    elif self.campo_ativo:
+                        if e.key == pygame.K_BACKSPACE:
+                            self.texto[self.campo_ativo] = self.texto[self.campo_ativo][:-1]
+                        else:
+                            self.texto[self.campo_ativo] += e.unicode
 
         pygame.quit()
