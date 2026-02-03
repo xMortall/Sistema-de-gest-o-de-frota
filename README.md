@@ -32,7 +32,7 @@ Funcionalidades futuras possíveis:
 ---
 
 ## 🗂 Estrutura do Projeto
-
+       ```bash
 Sistema-de-gest-o-de-frota/
 │
 ├── main.py # Ficheiro principal
@@ -44,7 +44,7 @@ Sistema-de-gest-o-de-frota/
 ├── inventario_frota.txt # Ficheiro de dados
 ├── requirements.txt # Dependências
 └── pycache/ # Cache do Python
-
+```
 
 ---
 
@@ -71,7 +71,7 @@ Sistema-de-gest-o-de-frota/
 
     python main.py
 
- Tecnologias Utilizadas
+2. Tecnologias Utilizadas
 
     Python 3
 
