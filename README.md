@@ -32,19 +32,19 @@ Funcionalidades futuras possíveis:
 ---
 
 ## 🗂 Estrutura do Projeto
-       ```bash
+
 Sistema-de-gest-o-de-frota/
-│
-├── main.py # Ficheiro principal
-├── gui.py # Interface gráfica
-├── frota.py # Gestão da frota
-├── veiculo.py # Classe Veículo
-├── bibliotecas.py # Bibliotecas utilizadas
-├── decorador.py # Decoradores
-├── inventario_frota.txt # Ficheiro de dados
-├── requirements.txt # Dependências
-└── pycache/ # Cache do Python
-```
+-│
+-├── main.py # Ficheiro principal
+-├── gui.py # Interface gráfica
+-├── frota.py # Gestão da frota
+-├── veiculo.py # Classe Veículo
+-├── bibliotecas.py # Bibliotecas utilizadas
+-├── decorador.py # Decoradores
+-├── inventario_frota.txt # Ficheiro de dados
+-├── requirements.txt # Dependências
+-└── pycache/ # Cache do Python
+
 
 ---
 
