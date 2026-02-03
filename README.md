@@ -75,7 +75,9 @@ Sistema-de-gest-o-de-frota/
 
     Python 3
 
-    Tkinter (GUI)
+    Pygame
+
+    Datatime
 
  Licença
 
